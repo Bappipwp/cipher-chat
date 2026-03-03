@@ -3,265 +3,634 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick Chat</title>
+  <title>cipher</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-    #login { margin-bottom: 20px; }
-    #chat { display: none; }
-    #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
-    #room-list { float: right; width: 200px; }
-    #user-list { float: right; width: 200px; margin-left: 20px; }
-    .message { margin-bottom: 10px; }
-    .message .sender { font-weight: bold; }
-    .encrypted { color: #666; font-style: italic; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #e0e0e0;
+      --dim: #555;
+      --green: #4ade80;
+      --red: #f87171;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+    }
+
+    .logo {
+      color: var(--green);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .logo span { color: var(--dim); font-weight: 400; }
+
+    #status-bar {
+      font-size: 0.75rem;
+      color: var(--dim);
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; flex: 1; }
+    .screen.active { display: flex; }
+
+    /* ── Landing ── */
+    #screen-landing {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    .landing-title {
+      text-align: center;
+    }
+
+    .landing-title h1 {
+      font-size: 2rem;
+      color: var(--green);
+      margin-bottom: 0.5rem;
+    }
+
+    .landing-title p {
+      color: var(--dim);
+      font-size: 0.85rem;
+    }
+
+    .landing-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: var(--green); }
+    input::placeholder { color: var(--dim); }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: #000;
+      border-color: var(--green);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover { filter: brightness(1.1); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface2);
+      border-color: var(--dim);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: var(--dim);
+      font-size: 0.75rem;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Invite screen ── */
+    #screen-invite {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+
+    .invite-box {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .invite-box h2 { font-size: 1rem; color: var(--green); }
+    .invite-box p { font-size: 0.8rem; color: var(--dim); }
+
+    .invite-link-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .invite-link-row input {
+      flex: 1;
+      font-size: 0.75rem;
+      color: var(--dim);
+    }
+
+    .invite-link-row button {
+      width: auto;
+      padding: 0.75rem 1.25rem;
+      white-space: nowrap;
+    }
+
+    /* ── Chat screen ── */
+    #screen-chat {
+      flex-direction: row;
+    }
+
+    #sidebar {
+      width: 200px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+    }
+
+    #user-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    #user-list li {
+      font-size: 0.8rem;
+      color: var(--text);
+      padding: 0.25rem 0;
+    }
+
+    #user-list li.self { color: var(--green); }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .enc-badge {
+      font-size: 0.65rem;
+      color: var(--green);
+      border: 1px solid var(--green);
+      padding: 0.25rem 0.5rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    #chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      max-width: 70%;
+    }
+
+    .msg.self { align-self: flex-end; align-items: flex-end; }
+    .msg.other { align-self: flex-start; }
+
+    .msg-sender {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    .msg-bubble {
+      padding: 0.6rem 0.9rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+      word-break: break-word;
+    }
+
+    .msg.self .msg-bubble {
+      background: var(--surface2);
+      border-color: var(--green);
+      border-width: 1px;
+    }
+
+    .msg.other .msg-bubble {
+      background: var(--surface);
+    }
+
+    .msg-system {
+      align-self: center;
+      font-size: 0.72rem;
+      color: var(--dim);
+      font-style: italic;
+    }
+
+    #input-row {
+      border-top: 1px solid var(--border);
+      display: flex;
+      background: var(--surface);
+    }
+
+    #msg-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      padding: 1rem 1.25rem;
+      font-size: 0.9rem;
+      resize: none;
+      height: 56px;
+      line-height: 1.5;
+    }
+
+    #send-btn {
+      width: auto;
+      padding: 0 1.5rem;
+      border: none;
+      border-left: 1px solid var(--border);
+      background: transparent;
+      color: var(--green);
+      font-size: 0.9rem;
+    }
+
+    #send-btn:hover { background: var(--surface2); }
+
+    .error-msg {
+      color: var(--red);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
   </style>
 </head>
 <body>
-  <h1>Quick Chat</h1>
-  
-  <div id="login">
-    <h2>Quick Login</h2>
-    <input type="text" id="username" placeholder="Enter a username">
-    <button id="login-btn">Start Chatting</button>
-  </div>
-  
-  <div id="chat">
-    <div id="room-list">
-      <h3>Rooms</h3>
-      <ul id="rooms"></ul>
-      <input type="text" id="new-room" placeholder="New room name">
-      <button id="create-room">Create</button>
-    </div>
-    
-    <div id="user-list">
-      <h3>Users</h3>
-      <ul id="users"></ul>
-    </div>
-    
-    <div id="chat-area">
-      <h2 id="current-room">General</h2>
-      <div id="messages"></div>
-      <textarea id="message-input" placeholder="Type your message"></textarea>
-      <button id="send-btn">Send</button>
-      <div id="encryption-status">Messages are end-to-end encrypted</div>
-    </div>
-  </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
-  <script>
-    const socket = io();
-    let currentUser = null;
-    let currentRoom = 'general';
-    let privateKey = null;
-    let publicKey = null;
-    let encrypt = new JSEncrypt();
-    let usersInRoom = {};
-    
-    // DOM elements
-    const loginSection = document.getElementById('login');
-    const chatSection = document.getElementById('chat');
-    const usernameInput = document.getElementById('username');
-    const loginBtn = document.getElementById('login-btn');
-    const roomsList = document.getElementById('rooms');
-    const usersList = document.getElementById('users');
-    const messagesDiv = document.getElementById('messages');
-    const messageInput = document.getElementById('message-input');
-    const sendBtn = document.getElementById('send-btn');
-    const newRoomInput = document.getElementById('new-room');
-    const createRoomBtn = document.getElementById('create-room');
-    const currentRoomTitle = document.getElementById('current-room');
-    
-    // Quick login
-    loginBtn.addEventListener('click', () => {
-      const username = usernameInput.value.trim();
-      if (username) {
-        socket.emit('quickLogin', username);
-      }
-    });
-    
-    // Handle login success
-    socket.on('loggedIn', (data) => {
-      currentUser = data.username;
-      privateKey = data.privateKey;
-      encrypt.setPrivateKey(privateKey);
-      
-      // Show chat interface
-      loginSection.style.display = 'none';
-      chatSection.style.display = 'block';
-      
-      // Populate rooms list
-      data.rooms.forEach(room => {
-        addRoomToList(room);
-      });
-      
-      // Join default room
-      joinRoom('general');
-    });
-    
-    // Join room
-    function joinRoom(roomName) {
-      currentRoom = roomName;
-      currentRoomTitle.textContent = roomName;
-      socket.emit('joinRoom', roomName);
-    }
-    
-    // Add room to list
-    function addRoomToList(roomName) {
+<header>
+  <div class="logo">cipher <span>// private chat</span></div>
+  <div id="status-bar">not connected</div>
+</header>
+
+<!-- Landing -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-title">
+    <h1>$ cipher</h1>
+    <p>invite-only rooms · end-to-end encrypted · nothing stored</p>
+  </div>
+  <div class="landing-actions">
+    <input type="text" id="username-input" placeholder="your name" maxlength="24" autocomplete="off">
+    <button class="btn-primary" id="create-btn">create a room</button>
+    <div class="divider">or join with a link</div>
+    <input type="text" id="join-link-input" placeholder="paste invite link here" autocomplete="off">
+    <button class="btn-secondary" id="join-btn">join room</button>
+    <p id="landing-error" class="error-msg"></p>
+  </div>
+</div>
+
+<!-- Invite link screen -->
+<div id="screen-invite" class="screen">
+  <div class="invite-box">
+    <h2>// room created</h2>
+    <p>Share this link. Anyone with it can join. The encryption key is in the link — the server never sees it.</p>
+    <div class="invite-link-row">
+      <input type="text" id="invite-link-input" readonly>
+      <button class="btn-secondary" id="copy-btn">copy</button>
+    </div>
+    <button class="btn-primary" id="enter-room-btn">enter room</button>
+  </div>
+</div>
+
+<!-- Chat -->
+<div id="screen-chat" class="screen">
+  <div id="sidebar">
+    <div class="sidebar-label">in this room</div>
+    <ul id="user-list"></ul>
+    <div class="sidebar-bottom">
+      <div class="enc-badge">e2e encrypted</div>
+      <button class="btn-secondary" id="copy-link-btn" style="font-size:0.75rem; padding: 0.5rem;">copy invite link</button>
+    </div>
+  </div>
+  <div id="chat-main">
+    <div id="messages"></div>
+    <div id="input-row">
+      <textarea id="msg-input" placeholder="message..."></textarea>
+      <button id="send-btn">send</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // ── State ──────────────────────────────────────────────
+  let socket = null;
+  let cryptoKey = null;   // AES-GCM key (never leaves browser)
+  let roomId = null;
+  let username = null;
+  let inviteLink = null;
+
+  // ── Helpers ────────────────────────────────────────────
+  const show = (id) => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  };
+
+  const setStatus = (text) => {
+    document.getElementById('status-bar').textContent = text;
+  };
+
+  // ── Crypto ─────────────────────────────────────────────
+  async function generateKey() {
+    return crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async function exportKey(key) {
+    const raw = await crypto.subtle.exportKey('raw', key);
+    return btoa(String.fromCharCode(...new Uint8Array(raw)));
+  }
+
+  async function importKey(b64) {
+    const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return crypto.subtle.importKey(
+      'raw', raw,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async function encryptMsg(text) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(text);
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encoded
+    );
+    return {
+      encrypted: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+      iv: btoa(String.fromCharCode(...iv))
+    };
+  }
+
+  async function decryptMsg(encrypted, iv) {
+    const ciphertext = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
+    const ivBytes = Uint8Array.from(atob(iv), c => c.charCodeAt(0));
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: ivBytes },
+      cryptoKey,
+      ciphertext
+    );
+    return new TextDecoder().decode(plaintext);
+  }
+
+  // ── UI helpers ─────────────────────────────────────────
+  function addMessage(from, text, isSelf) {
+    const messages = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `msg ${isSelf ? 'self' : 'other'}`;
+    div.innerHTML = `
+      <div class="msg-sender">${from}</div>
+      <div class="msg-bubble">${text.replace(/</g, '&lt;')}</div>
+    `;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function addSystem(text) {
+    const messages = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg-system';
+    div.textContent = text;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function updateUserList(users) {
+    const ul = document.getElementById('user-list');
+    ul.innerHTML = '';
+    users.forEach(name => {
       const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.href = '#';
-      a.textContent = roomName;
-      a.addEventListener('click', (e) => {
-        e.preventDefault();
-        joinRoom(roomName);
-      });
-      li.appendChild(a);
-      roomsList.appendChild(li);
-    }
-    
-    // Create new room
-    createRoomBtn.addEventListener('click', () => {
-      const roomName = newRoomInput.value.trim();
-      if (roomName && !roomsList.querySelector(`li a[href="#"]`)) {
-        addRoomToList(roomName);
-        newRoomInput.value = '';
-      }
+      li.textContent = name;
+      if (name === username) li.className = 'self';
+      ul.appendChild(li);
     });
-    
-    // Send message
-    sendBtn.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        sendMessage();
-      }
+  }
+
+  // ── Socket ─────────────────────────────────────────────
+  function connectSocket() {
+    socket = io();
+
+    socket.on('joined', ({ userList }) => {
+      updateUserList(userList);
+      setStatus(`room: ${roomId} · ${userList.length} online`);
+      show('screen-chat');
     });
-    
-    function sendMessage() {
-      const message = messageInput.value.trim();
-      if (!message) return;
-      
-      // Encrypt the message for all users in the room
-      Object.values(usersInRoom).forEach(user => {
-        if (user.publicKey !== publicKey) { // Don't encrypt for ourselves
-          const userEncrypt = new JSEncrypt();
-          userEncrypt.setPublicKey(user.publicKey);
-          const encrypted = userEncrypt.encrypt(message);
-          
-          if (encrypted) {
-            socket.emit('encryptedMessage', {
-              room: currentRoom,
-              encryptedMessage: encrypted,
-              to: user.publicKey
-            });
-          }
-        }
-      });
-      
-      // Add our own message (not encrypted)
-      addMessage({
-        from: currentUser,
-        message: message,
-        isEncrypted: false
-      });
-      
-      messageInput.value = '';
-    }
-    
-    // Add message to UI
-    function addMessage(msg) {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = 'message';
-      
-      const senderSpan = document.createElement('span');
-      senderSpan.className = 'sender';
-      senderSpan.textContent = msg.from + ': ';
-      messageDiv.appendChild(senderSpan);
-      
-      const contentSpan = document.createElement('span');
-      contentSpan.className = msg.isEncrypted ? 'encrypted' : '';
-      contentSpan.textContent = msg.isEncrypted ? '[Encrypted message]' : msg.message;
-      messageDiv.appendChild(contentSpan);
-      
-      messagesDiv.appendChild(messageDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-    
-    // Handle room info
-    socket.on('roomInfo', (data) => {
-      currentRoomTitle.textContent = data.name;
-      usersInRoom = {};
-      
-      // Update user list
-      usersList.innerHTML = '';
-      data.users.forEach(user => {
-        usersInRoom[user.publicKey] = user;
-        const li = document.createElement('li');
-        li.textContent = user.username;
-        usersList.appendChild(li);
-      });
-      
-      // Show message history
-      messagesDiv.innerHTML = '';
-      data.messages.forEach(msg => {
-        if (msg.to && msg.to !== publicKey) return; // Skip messages not for us
-        
-        let decrypted = '[Cannot decrypt]';
-        if (msg.to === publicKey || msg.to === undefined) {
-          try {
-            decrypted = encrypt.decrypt(msg.encryptedMessage) || '[Cannot decrypt]';
-          } catch (e) {
-            console.error('Decryption error:', e);
-          }
-        }
-        
-        addMessage({
-          from: msg.from,
-          message: decrypted,
-          isEncrypted: decrypted === '[Cannot decrypt]'
-        });
-      });
+
+    socket.on('userJoined', ({ username: name, userList }) => {
+      updateUserList(userList);
+      addSystem(`${name} joined`);
+      setStatus(`room: ${roomId} · ${userList.length} online`);
     });
-    
-    // Handle new encrypted message
-    socket.on('newEncryptedMessage', (msg) => {
-      if (msg.from === currentUser) return; // Skip our own messages
-      
-      let decrypted = '[Cannot decrypt]';
+
+    socket.on('userLeft', ({ username: name, userList }) => {
+      updateUserList(userList);
+      addSystem(`${name} left`);
+      setStatus(`room: ${roomId} · ${userList.length} online`);
+    });
+
+    socket.on('message', async ({ from, encrypted, iv }) => {
       try {
-        decrypted = encrypt.decrypt(msg.encryptedMessage) || '[Cannot decrypt]';
-      } catch (e) {
-        console.error('Decryption error:', e);
-      }
-      
-      addMessage({
-        from: msg.from,
-        message: decrypted,
-        isEncrypted: decrypted === '[Cannot decrypt]'
-      });
-    });
-    
-    // Handle user joined
-    socket.on('userJoined', (user) => {
-      usersInRoom[user.publicKey] = user;
-      const li = document.createElement('li');
-      li.textContent = user.username;
-      usersList.appendChild(li);
-    });
-    
-    // Handle user left
-    socket.on('userLeft', (username) => {
-      const userEntry = Object.entries(usersInRoom).find(([_, u]) => u.username === username);
-      if (userEntry) {
-        delete usersInRoom[userEntry[0]];
-        const items = usersList.querySelectorAll('li');
-        items.forEach(item => {
-          if (item.textContent === username) {
-            item.remove();
-          }
-        });
+        const text = await decryptMsg(encrypted, iv);
+        addMessage(from, text, false);
+      } catch {
+        addSystem('[could not decrypt a message]');
       }
     });
-  </script>
+
+    socket.on('error', (msg) => {
+      document.getElementById('landing-error').textContent = msg;
+      show('screen-landing');
+    });
+
+    socket.emit('join', { roomId, username });
+  }
+
+  // ── Send message ───────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    if (!text || !socket) return;
+
+    const { encrypted, iv } = await encryptMsg(text);
+    socket.emit('message', { encrypted, iv });
+    addMessage(username, text, true);
+    input.value = '';
+  }
+
+  // ── Detect join vs create on load ─────────────────────
+  const hash = location.hash.slice(1);
+  const hashParams = new URLSearchParams(hash);
+  const joinRoomId = hashParams.get('r');
+  const joinKey = hashParams.get('k');
+  const isJoining = !!(joinRoomId && joinKey);
+
+  if (isJoining) {
+    document.getElementById('create-btn').textContent = 'join room';
+    (async () => {
+      roomId = joinRoomId;
+      cryptoKey = await importKey(decodeURIComponent(joinKey));
+      inviteLink = location.href;
+      history.replaceState(null, '', '/'); // clear hash from URL
+    })();
+  }
+
+  // ── Single create/join handler ─────────────────────────
+  document.getElementById('create-btn').addEventListener('click', async () => {
+    const name = document.getElementById('username-input').value.trim();
+    if (!name) {
+      document.getElementById('landing-error').textContent = 'enter a name first';
+      return;
+    }
+    username = name;
+
+    if (isJoining) {
+      connectSocket();
+    } else {
+      cryptoKey = await generateKey();
+      const keyB64 = await exportKey(cryptoKey);
+      const res = await fetch('/api/create', { method: 'POST' });
+      const { roomId: id } = await res.json();
+      roomId = id;
+      inviteLink = `${location.origin}/#r=${roomId}&k=${encodeURIComponent(keyB64)}`;
+      document.getElementById('invite-link-input').value = inviteLink;
+      show('screen-invite');
+    }
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    navigator.clipboard.writeText(inviteLink);
+    document.getElementById('copy-btn').textContent = 'copied!';
+    setTimeout(() => document.getElementById('copy-btn').textContent = 'copy', 2000);
+  });
+
+  document.getElementById('copy-link-btn').addEventListener('click', async () => {
+    const link = inviteLink || location.href;
+    try {
+      await navigator.clipboard.writeText(link);
+      document.getElementById('copy-link-btn').textContent = 'copied!';
+      setTimeout(() => document.getElementById('copy-link-btn').textContent = 'copy invite link', 2000);
+    } catch {
+      prompt('Copy this invite link:', link);
+    }
+  });
+
+  document.getElementById('enter-room-btn').addEventListener('click', () => {
+    connectSocket();
+  });
+
+  document.getElementById('join-btn').addEventListener('click', async () => {
+    const name = document.getElementById('username-input').value.trim();
+    const raw = document.getElementById('join-link-input').value.trim();
+    if (!name) { document.getElementById('landing-error').textContent = 'enter a name first'; return; }
+    if (!raw)  { document.getElementById('landing-error').textContent = 'paste an invite link'; return; }
+
+    const fragment = raw.includes('#') ? raw.split('#')[1] : raw;
+    const p = new URLSearchParams(fragment);
+    const r = p.get('r');
+    const k = p.get('k');
+    if (!r || !k) { document.getElementById('landing-error').textContent = 'invalid invite link'; return; }
+
+    username = name;
+    roomId = r;
+    cryptoKey = await importKey(decodeURIComponent(k));
+    inviteLink = raw.includes('#') ? raw : `${location.origin}/#${raw}`;
+    connectSocket();
+  });
+
+  // ── Input events ───────────────────────────────────────
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('msg-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+</script>
 </body>
 </html>
