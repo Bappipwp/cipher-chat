@@ -54,8 +54,3 @@ Open `http://localhost:3000`
 - Rooms are destroyed server-side when all users disconnect
 - The URL hash containing the key is cleared from the browser address bar after joining
 
----
-
-## Credits
-
-Sebastian Marquez — [github.com/Bappipwp](https://github.com/Bappipwp)
