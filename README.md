@@ -45,6 +45,10 @@ npm start
 
 Open `http://localhost:3000`
 
+## Hosted on Render
+
+Open 'https://cipher-chat-2n0n.onrender.com'
+
 ---
 
 ## Security notes
